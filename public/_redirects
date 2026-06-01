@@ -1,0 +1,7 @@
+# Redirect root to login
+/           /login.html    302
+
+# Ensure clean URLs work
+/login      /login.html    301
+/signup     /signup.html   301
+/app        /app.html      301
