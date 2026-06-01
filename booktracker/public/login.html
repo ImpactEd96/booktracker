@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — BookTracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">📚 BookTracker</div>
+      <div class="auth-tagline">Your personal library, organised.</div>
+
+      <div id="alert" class="alert alert-error" style="display:none"></div>
+
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input class="form-input" type="email" id="email" name="email"
+                 autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-input" type="password" id="password" name="password"
+                 autocomplete="current-password" placeholder="••••••••" required>
+        </div>
+        <button class="btn btn-primary auth-submit" type="submit" id="submit-btn">
+          Sign in
+        </button>
+      </form>
+
+      <div class="auth-divider">
+        Don't have an account? <a href="/signup">Sign up</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const alert = document.getElementById('alert');
+    const btn = document.getElementById('submit-btn');
+
+    function showError(msg) {
+      alert.textContent = msg;
+      alert.style.display = 'flex';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alert.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Signing in…';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+          credentials: 'same-origin',
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showError(data.error || 'Sign in failed');
+          btn.disabled = false;
+          btn.textContent = 'Sign in';
+          return;
+        }
+        window.location.href = '/app';
+      } catch {
+        showError('Network error — please try again');
+        btn.disabled = false;
+        btn.textContent = 'Sign in';
+      }
+    });
+  </script>
+</body>
+</html>

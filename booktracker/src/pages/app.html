@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BookTracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <a href="/app.html" class="nav-brand">📚 BookTracker</a>
+    <div class="nav-links">
+      <a href="#" class="nav-link active" data-tab="books">My library</a>
+      <a href="#" class="nav-link" data-tab="loans-out">Loaned out</a>
+      <a href="#" class="nav-link" data-tab="loans-in">Borrowed</a>
+    </div>
+    <div class="nav-end">
+      <span class="nav-user" id="nav-user"></span>
+      <button class="btn btn-ghost btn-sm" id="logout-btn">Sign out</button>
+    </div>
+  </nav>
+
+  <main style="padding: 32px 0;">
+    <div class="container">
+
+      <!-- Stats bar -->
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat"><div class="stat-value" id="stat-total">—</div><div class="stat-label">Books in library</div></div>
+        <div class="stat"><div class="stat-value" id="stat-loaned">—</div><div class="stat-label">Currently loaned out</div></div>
+        <div class="stat"><div class="stat-value" id="stat-borrowed">—</div><div class="stat-label">Currently borrowed</div></div>
+      </div>
+
+      <!-- ===== BOOKS TAB ===== -->
+      <div id="tab-books">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">My library</h1>
+            <div class="page-subtitle">All the books you own</div>
+          </div>
+          <button class="btn btn-primary" id="add-book-btn">+ Add book</button>
+        </div>
+        <div class="search-bar">
+          <input class="search-input" id="book-search" type="search" placeholder="Search by title or author…">
+        </div>
+        <div class="book-grid" id="book-grid">
+          <div class="empty" style="grid-column:1/-1">
+            <div class="spinner" style="width:24px;height:24px;border-width:3px;margin:0 auto 12px"></div>
+            <p>Loading…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LOANS OUT TAB ===== -->
+      <div id="tab-loans-out" style="display:none">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Loaned out</h1>
+            <div class="page-subtitle">Books you've lent to others</div>
+          </div>
+          <button class="btn btn-primary" id="add-loan-out-btn">+ Log loan</button>
+        </div>
+        <div class="card" id="loans-out-list">
+          <div class="empty">
+            <div class="spinner" style="width:24px;height:24px;border-width:3px;margin:0 auto 12px"></div>
+            <p>Loading…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== LOANS IN TAB ===== -->
+      <div id="tab-loans-in" style="display:none">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Borrowed</h1>
+            <div class="page-subtitle">Books others have lent to you</div>
+          </div>
+          <button class="btn btn-primary" id="add-loan-in-btn">+ Log borrowed book</button>
+        </div>
+        <div class="card" id="loans-in-list">
+          <div class="empty">
+            <div class="spinner" style="width:24px;height:24px;border-width:3px;margin:0 auto 12px"></div>
+            <p>Loading…</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ===== ADD/EDIT BOOK MODAL ===== -->
+  <div class="modal-backdrop" id="book-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="book-modal-title">Add book</h2>
+        <button class="btn btn-ghost btn-icon" id="book-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="book-modal-alert" class="alert alert-error" style="display:none"></div>
+        <div class="form-group">
+          <label class="form-label" for="book-isbn">ISBN (optional — for cover lookup)</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" type="text" id="book-isbn" placeholder="e.g. 9780141036144">
+            <button class="btn btn-secondary btn-sm" id="isbn-lookup-btn" style="white-space:nowrap">Look up</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="book-title">Title <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="book-title" placeholder="The name of the book">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="book-author">Author <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="book-author" placeholder="Author name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="book-notes">Notes (optional)</label>
+          <textarea class="form-textarea" id="book-notes" placeholder="Any personal notes about this book…"></textarea>
+        </div>
+        <input type="hidden" id="book-cover-url">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="book-modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="book-modal-save">Save book</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOAN OUT MODAL ===== -->
+  <div class="modal-backdrop" id="loan-out-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Log a loan</h2>
+        <button class="btn btn-ghost btn-icon" id="loan-out-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="loan-out-alert" class="alert alert-error" style="display:none"></div>
+        <div class="form-group">
+          <label class="form-label" for="loan-out-book">Book <span style="color:var(--danger)">*</span></label>
+          <select class="form-select" id="loan-out-book"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-out-borrower">Borrower's name <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="loan-out-borrower" placeholder="Who are you lending to?">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-out-email">Borrower's email (optional)</label>
+          <input class="form-input" type="email" id="loan-out-email" placeholder="their@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-out-due">Due date (optional)</label>
+          <input class="form-input" type="date" id="loan-out-due">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="loan-out-cancel">Cancel</button>
+        <button class="btn btn-primary" id="loan-out-save">Log loan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LOAN IN MODAL ===== -->
+  <div class="modal-backdrop" id="loan-in-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Log a borrowed book</h2>
+        <button class="btn btn-ghost btn-icon" id="loan-in-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="loan-in-alert" class="alert alert-error" style="display:none"></div>
+        <div class="form-group">
+          <label class="form-label" for="loan-in-title">Book title <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="loan-in-title" placeholder="Title of the book">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-in-author">Author <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="loan-in-author" placeholder="Author name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-in-lender">Lender's name <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="text" id="loan-in-lender" placeholder="Who lent you this?">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-in-email">Lender's email (optional)</label>
+          <input class="form-input" type="email" id="loan-in-email" placeholder="their@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loan-in-due">Due date (optional)</label>
+          <input class="form-input" type="date" id="loan-in-due">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="loan-in-cancel">Cancel</button>
+        <button class="btn btn-primary" id="loan-in-save">Log book</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

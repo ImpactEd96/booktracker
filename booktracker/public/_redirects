@@ -1,0 +1,4 @@
+# Clean URL aliases
+/login      /login.html    301
+/signup     /signup.html   301
+/app        /app.html      301

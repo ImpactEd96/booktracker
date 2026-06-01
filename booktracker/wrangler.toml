@@ -1,0 +1,8 @@
+name = "booktracker"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "booktracker-db"
+database_id = "8d16d11e-5b0c-46f3-ac5e-c00f7c2335e1"
