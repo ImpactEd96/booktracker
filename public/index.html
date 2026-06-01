@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Folio — Your Personal Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #1a1209;
+      --parchment: #f5eed8;
+      --cream:     #faf6ea;
+      --amber:     #c8842a;
+      --rust:      #9b3d22;
+      --sage:      #4a6741;
+      --dust:      #b8a98a;
+      --shadow:    rgba(26,18,9,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--cream);
+      color: var(--ink);
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.5;
+    }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.4rem 4rem;
+      border-bottom: 1px solid var(--dust);
+      position: sticky;
+      top: 0;
+      background: rgba(250,246,234,0.92);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .nav-logo span {
+      color: var(--amber);
+      font-style: italic;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink);
+      text-decoration: none;
+      opacity: 0.65;
+      transition: opacity 0.2s;
+    }
+
+    .nav-links a:hover { opacity: 1; }
+
+    .nav-cta {
+      background: var(--ink);
+      color: var(--parchment) !important;
+      padding: 0.5rem 1.4rem;
+      border-radius: 2px;
+      opacity: 1 !important;
+      transition: background 0.2s !important;
+    }
+
+    .nav-cta:hover { background: var(--amber) !important; }
+
+    /* ── Hero ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 64px);
+      position: relative;
+    }
+
+    .hero-left {
+      padding: 6rem 4rem 6rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    .hero-eyebrow {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.1s ease forwards;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 2rem;
+      height: 1px;
+      background: var(--amber);
+    }
+
+    .hero-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 5vw, 5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.8rem;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.25s ease forwards;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .hero-sub {
+      font-size: 1.2rem;
+      font-weight: 300;
+      color: rgba(26,18,9,0.7);
+      max-width: 42ch;
+      margin-bottom: 3rem;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.4s ease forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.55s ease forwards;
+    }
+
+    .btn-primary {
+      background: var(--amber);
+      color: #fff;
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 0.85rem 2.2rem;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s, transform 0.15s;
+      box-shadow: 0 4px 16px rgba(200,132,42,0.3);
+    }
+
+    .btn-primary:hover { background: var(--rust); transform: translateY(-1px); }
+
+    .btn-ghost {
+      font-family: 'Crimson Pro', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-bottom: 1px solid var(--dust);
+      padding-bottom: 2px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-ghost:hover { color: var(--amber); border-color: var(--amber); }
+
+    /* ── Hero visual ── */
+    .hero-right {
+      position: relative;
+      background: var(--parchment);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-left: 1px solid var(--dust);
+    }
+
+    .shelf-illustration {
+      position: relative;
+      width: 340px;
+      opacity: 0;
+      animation: fadeIn 1s 0.6s ease forwards;
+    }
+
+    /* Book shelf */
+    .shelf {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      position: relative;
+      padding-bottom: 12px;
+    }
+
+    .shelf::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -20px;
+      right: -20px;
+      height: 12px;
+      background: var(--dust);
+      border-radius: 2px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .book {
+      border-radius: 2px 4px 4px 2px;
+      position: relative;
+      cursor: default;
+      transition: transform 0.2s;
+      box-shadow: 2px 2px 8px var(--shadow);
+    }
+
+    .book:hover { transform: translateY(-8px); }
+
+    .book-spine {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-family: 'Crimson Pro', serif;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      padding: 8px 0;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Badge on books */
+    .book-badge {
+      position: absolute;
+      top: 6px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--parchment);
+      font-size: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    .badge-out  { background: var(--rust); }
+    .badge-in   { background: var(--sage); }
+
+    /* stat cards floating */
+    .stat-card {
+      position: absolute;
+      background: white;
+      border: 1px solid var(--dust);
+      border-radius: 4px;
+      padding: 0.9rem 1.2rem;
+      box-shadow: 0 8px 32px var(--shadow);
+      min-width: 140px;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .stat-card:nth-child(1) { top: 15%; left: 4%; animation-delay: 0s; }
+    .stat-card:nth-child(2) { bottom: 20%; right: 4%; animation-delay: 2s; }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+      color: var(--amber);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(26,18,9,0.5);
+      margin-top: 0.25rem;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-8px); }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ── Divider ── */
+    .divider {
+      text-align: center;
+      padding: 3rem 0 1.5rem;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      color: var(--dust);
+      letter-spacing: 0.3em;
+    }
+
+    /* ── Features ── */
+    .features {
+      padding: 5rem 4rem 6rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .section-label::before {
+      content: '';
+      display: inline-block;
+      width: 2rem;
+      height: 1px;
+      background: var(--amber);
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 3.5rem;
+      max-width: 28ch;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      border: 1px solid var(--dust);
+    }
+
+    .feature-card {
+      padding: 2.5rem 2rem;
+      border-right: 1px solid var(--dust);
+      background: var(--cream);
+      transition: background 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:last-child { border-right: none; }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--amber);
+      transform: scaleX(0);
+      transition: transform 0.3s;
+      transform-origin: left;
+    }
+
+    .feature-card:hover { background: var(--parchment); }
+    .feature-card:hover::before { transform: scaleX(1); }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 1.2rem;
+      display: block;
+    }
+
+    .feature-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+      line-height: 1.2;
+    }
+
+    .feature-desc {
+      font-size: 1rem;
+      color: rgba(26,18,9,0.65);
+      font-weight: 300;
+      line-height: 1.7;
+    }
+
+    /* ── Highlight band ── */
+    .highlight {
+      background: var(--ink);
+      color: var(--parchment);
+      padding: 5rem 4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .highlight::before {
+      content: '\201C';
+      position: absolute;
+      font-family: 'Playfair Display', serif;
+      font-size: 30rem;
+      font-weight: 900;
+      color: rgba(200,132,42,0.06);
+      top: -8rem;
+      left: -2rem;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .highlight-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .highlight-label::before {
+      content: '';
+      display: inline-block;
+      width: 2rem;
+      height: 1px;
+      background: var(--amber);
+    }
+
+    .highlight-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+
+    .highlight-title em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .highlight-body {
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: rgba(245,238,216,0.75);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+    }
+
+    .tracker-mockup {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(245,238,216,0.15);
+      border-radius: 6px;
+      padding: 1.5rem;
+    }
+
+    .tracker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(245,238,216,0.1);
+    }
+
+    .tracker-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--parchment);
+    }
+
+    .tracker-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-loaned  { background: rgba(155,61,34,0.4);  color: #f5a58a; }
+    .badge-borrowed { background: rgba(74,103,65,0.4); color: #9ec490; }
+
+    .tracker-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(245,238,216,0.07);
+      gap: 1rem;
+    }
+
+    .tracker-row:last-child { border-bottom: none; }
+
+    .tracker-book-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--parchment);
+      flex: 1;
+    }
+
+    .tracker-person {
+      font-size: 0.85rem;
+      color: rgba(245,238,216,0.5);
+      font-style: italic;
+    }
+
+    .tracker-due {
+      font-size: 0.8rem;
+      color: var(--amber);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tracker-due.overdue { color: #f5a58a; }
+
+    /* ── How it works ── */
+    .how {
+      padding: 6rem 4rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3rem;
+      margin-top: 3.5rem;
+    }
+
+    .step {
+      position: relative;
+    }
+
+    .step-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--dust);
+      line-height: 1;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .step-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .step-desc {
+      font-size: 0.95rem;
+      font-weight: 300;
+      color: rgba(26,18,9,0.6);
+      line-height: 1.7;
+    }
+
+    /* connector line */
+    .step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 2rem;
+      right: -1.5rem;
+      width: 3rem;
+      height: 1px;
+      background: var(--dust);
+    }
+
+    /* ── CTA ── */
+    .cta-band {
+      background: var(--parchment);
+      border-top: 1px solid var(--dust);
+      border-bottom: 1px solid var(--dust);
+      padding: 6rem 4rem;
+      text-align: center;
+    }
+
+    .cta-band h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-band h2 em {
+      font-style: italic;
+      color: var(--amber);
+    }
+
+    .cta-band p {
+      font-size: 1.15rem;
+      font-weight: 300;
+      color: rgba(26,18,9,0.65);
+      max-width: 48ch;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 2.5rem 4rem;
+      border-top: 1px solid var(--dust);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: rgba(26,18,9,0.45);
+    }
+
+    footer a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    footer a:hover { color: var(--amber); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      nav { padding: 1.2rem 2rem; }
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; min-height: unset; }
+      .hero-right { height: 380px; border-left: none; border-top: 1px solid var(--dust); }
+      .hero-left { padding: 4rem 2rem; }
+      .features { padding: 4rem 2rem; }
+      .features-grid { grid-template-columns: 1fr; }
+      .feature-card { border-right: none; border-bottom: 1px solid var(--dust); }
+      .highlight { grid-template-columns: 1fr; padding: 4rem 2rem; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .step::after { display: none; }
+      .how { padding: 4rem 2rem; }
+      .cta-band { padding: 4rem 2rem; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">F<span>olio</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#tracker">Tracker</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="/login">Log in</a></li>
+      <li><a href="/signup" class="nav-cta">Get started</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <p class="hero-eyebrow">Your personal library, organised</p>
+      <h1 class="hero-headline">
+        Know exactly where<br>every <em>book</em> is.
+      </h1>
+      <p class="hero-sub">
+        Catalogue your collection, track what you've loaned to friends, and remember what you've borrowed — so no book ever goes missing again.
+      </p>
+      <div class="hero-actions">
+        <a href="/signup" class="btn-primary">Start your library</a>
+        <a href="#features" class="btn-ghost">See features →</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <!-- Floating stat cards -->
+      <div class="stat-card">
+        <div class="stat-num">3</div>
+        <div class="stat-label">Loaned out</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">2</div>
+        <div class="stat-label">Borrowed</div>
+      </div>
+      <!-- Book shelf -->
+      <div class="shelf-illustration">
+        <div class="shelf">
+          <div class="book" style="width:28px;height:160px;background:#7b4e2d;">
+            <span class="book-spine">Dune</span>
+          </div>
+          <div class="book" style="width:22px;height:140px;background:#3a5a4a;">
+            <span class="book-spine">Piranesi</span>
+          </div>
+          <div class="book" style="width:32px;height:175px;background:#8b3a2a;">
+            <span class="book-spine">Middlemarch</span>
+            <span class="book-badge badge-out">↗</span>
+          </div>
+          <div class="book" style="width:20px;height:130px;background:#6a5040;">
+            <span class="book-spine">Kafka</span>
+          </div>
+          <div class="book" style="width:26px;height:155px;background:#4a5068;">
+            <span class="book-spine">Shōgun</span>
+            <span class="book-badge badge-in">↙</span>
+          </div>
+          <div class="book" style="width:30px;height:168px;background:#b87840;">
+            <span class="book-spine">Anna K.</span>
+            <span class="book-badge badge-out">↗</span>
+          </div>
+          <div class="book" style="width:24px;height:148px;background:#5a4070;">
+            <span class="book-spine">His Dark</span>
+          </div>
+          <div class="book" style="width:18px;height:125px;background:#3d6045;">
+            <span class="book-spine">Stoner</span>
+          </div>
+          <div class="book" style="width:28px;height:158px;background:#8a6840;">
+            <span class="book-spine">Remains</span>
+            <span class="book-badge badge-in">↙</span>
+          </div>
+          <div class="book" style="width:22px;height:142px;background:#6b3a50;">
+            <span class="book-spine">Brief H.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider">· · ·</div>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <p class="section-label">What Folio does</p>
+    <h2 class="section-title">Everything a careful reader needs</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">📚</span>
+        <h3 class="feature-title">Full Library Catalogue</h3>
+        <p class="feature-desc">Add books by ISBN or manually. Track title, author, edition, and cover art. Search and filter your entire collection in seconds.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">↗</span>
+        <h3 class="feature-title">Loaned Books Tracker</h3>
+        <p class="feature-desc">Record who borrowed your book, when they took it, and set a return date. Get reminders before things go awkward.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">↙</span>
+        <h3 class="feature-title">Borrowed Books Log</h3>
+        <p class="feature-desc">Track books you've borrowed from others. Note the lender and the due date so you never keep a friend waiting too long.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HIGHLIGHT: TRACKER -->
+  <section class="highlight" id="tracker">
+    <div>
+      <p class="highlight-label">The important bit</p>
+      <h2 class="highlight-title">
+        Your books leave the shelf.<br>
+        <em>Folio remembers</em><br>where they went.
+      </h2>
+      <p class="highlight-body">
+        You'll always know whether "The Secret History" is in your hands or theirs — and exactly how long it's been. No more awkward "I think I lent it to someone" conversations.
+      </p>
+      <a href="/signup" class="btn-primary">Try for free</a>
+    </div>
+    <div>
+      <div class="tracker-mockup">
+        <div class="tracker-header">
+          <span class="tracker-title">Currently out of your shelf</span>
+          <span class="tracker-badge badge-loaned">3 loaned</span>
+        </div>
+        <div class="tracker-row">
+          <span class="tracker-book-name">Middlemarch</span>
+          <span class="tracker-person">Sarah M.</span>
+          <span class="tracker-due overdue">Overdue</span>
+        </div>
+        <div class="tracker-row">
+          <span class="tracker-book-name">Anna Karenina</span>
+          <span class="tracker-person">James T.</span>
+          <span class="tracker-due">Due Jun 14</span>
+        </div>
+        <div class="tracker-row">
+          <span class="tracker-book-name">The Road</span>
+          <span class="tracker-person">Mum</span>
+          <span class="tracker-due">Due Jul 1</span>
+        </div>
+        <div class="tracker-header" style="margin-top:1.5rem;margin-bottom:0.8rem; padding-top:1rem; border-top: 1px solid rgba(245,238,216,0.1); border-bottom: none;">
+          <span class="tracker-title">You're holding</span>
+          <span class="tracker-badge badge-borrowed">2 borrowed</span>
+        </div>
+        <div class="tracker-row">
+          <span class="tracker-book-name">Shōgun</span>
+          <span class="tracker-person">from David</span>
+          <span class="tracker-due">Return by Jun 20</span>
+        </div>
+        <div class="tracker-row">
+          <span class="tracker-book-name">The Remains of the Day</span>
+          <span class="tracker-person">from Aunt Bev</span>
+          <span class="tracker-due">No due date</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <p class="section-label">Getting started</p>
+    <h2 class="section-title">Up and running in minutes</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3 class="step-title">Add your books</h3>
+        <p class="step-desc">Scan a barcode, enter an ISBN, or add books manually. Build your catalogue at your own pace.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3 class="step-title">Mark a loan</h3>
+        <p class="step-desc">Select a book, enter the borrower's name, and set an optional return date. Done in under ten seconds.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3 class="step-title">Log what you borrow</h3>
+        <p class="step-desc">Record books you've taken from others so you can stay on top of what needs to go back.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3 class="step-title">Close the loop</h3>
+        <p class="step-desc">Mark books as returned with a single tap. Your library stays clean and accurate, always.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band">
+    <h2>Your shelf deserves<br><em>better accounting.</em></h2>
+    <p>Join readers who never lose track of a book again. Free to start, no credit card needed.</p>
+    <a href="/signup" class="btn-primary" style="font-size:1.15rem;padding:1rem 2.8rem;">Start your library</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span><strong style="font-family:'Playfair Display',serif;">Folio</strong> — Personal Library Tracker</span>
+    <span>Made with ♥ for book lovers</span>
+    <span><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Contact</a></span>
+  </footer>
+
+</body>
+</html>
