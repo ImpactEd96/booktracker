@@ -176,12 +176,29 @@ function openEditBook(id) {
   document.getElementById('book-author').value = book.author;
   document.getElementById('book-notes').value = book.notes || '';
   document.getElementById('book-cover-url').value = book.cover_url || '';
+  document.getElementById('book-modal-loan').style.display = book.on_loan ? 'none' : '';
   hideAlert('book-modal-alert');
   openModal('book-modal');
 }
 
 ['book-modal-close', 'book-modal-cancel'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => closeModal('book-modal'));
+});
+
+document.getElementById('book-modal-loan').addEventListener('click', () => {
+  const bookId = state.editingBookId;
+  if (!bookId) return;
+  const available = state.books.filter(b => !b.on_loan);
+  const select = document.getElementById('loan-out-book');
+  select.innerHTML = available.map(b =>
+    `<option value="${b.id}" ${b.id === bookId ? 'selected' : ''}>${escHtml(b.title)} — ${escHtml(b.author)}</option>`
+  ).join('');
+  document.getElementById('loan-out-borrower').value = '';
+  document.getElementById('loan-out-email').value = '';
+  document.getElementById('loan-out-due').value = '';
+  hideAlert('loan-out-alert');
+  closeModal('book-modal');
+  openModal('loan-out-modal');
 });
 
 // ISBN lookup via Open Library
