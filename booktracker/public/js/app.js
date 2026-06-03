@@ -167,6 +167,7 @@ document.getElementById('add-book-btn').addEventListener('click', () => {
   document.getElementById('book-notes').value = '';
   document.getElementById('book-cover-url').value = '';
   document.getElementById('book-modal-loan').style.display = '';
+  document.getElementById('book-modal-delete').style.display = 'none';
   hideAlert('book-modal-alert');
   openModal('book-modal');
 });
@@ -182,12 +183,17 @@ function openEditBook(id) {
   document.getElementById('book-notes').value = book.notes || '';
   document.getElementById('book-cover-url').value = book.cover_url || '';
   document.getElementById('book-modal-loan').style.display = book.on_loan ? 'none' : '';
+  document.getElementById('book-modal-delete').style.display = '';
   hideAlert('book-modal-alert');
   openModal('book-modal');
 }
 
 ['book-modal-close', 'book-modal-cancel'].forEach(id => {
   document.getElementById(id).addEventListener('click', () => closeModal('book-modal'));
+});
+
+document.getElementById('book-modal-delete').addEventListener('click', () => {
+  if (state.editingBookId) deleteBook(state.editingBookId);
 });
 
 async function saveBookData() {
