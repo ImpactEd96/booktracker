@@ -426,7 +426,9 @@ a:hover { text-decoration: underline; }
   padding: 12px 16px;
   flex: 1;
   min-width: 100px;
+  cursor: pointer;
 }
+.stat:hover { background: var(--bg2); }
 .stat-value { font-size: 24px; font-family: 'Lora', serif; font-weight: 500; color: var(--text); }
 .stat-label { font-size: 12px; color: var(--text3); margin-top: 2px; }
 

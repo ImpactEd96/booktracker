@@ -105,6 +105,10 @@ function updateStats() {
     state.loansIn.filter(l => !l.returned_at).length;
 }
 
+document.querySelectorAll('.stats-bar .stat').forEach(el => {
+  el.addEventListener('click', () => showTab(el.dataset.tab));
+});
+
 // ── Books ──────────────────────────────────────────────────
 async function loadBooks() {
   const res = await api('/api/books');
@@ -268,6 +272,13 @@ document.getElementById('isbn-lookup-btn').addEventListener('click', async () =>
   }
   btn.disabled = false;
   btn.textContent = 'Look up';
+});
+
+document.getElementById('book-isbn').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('isbn-lookup-btn').click();
+  }
 });
 
 document.getElementById('book-modal-save').addEventListener('click', async () => {
