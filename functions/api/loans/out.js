@@ -36,7 +36,7 @@ export async function onRequestPost(context) {
   }
 
   const book = await env.DB.prepare(
-    "SELECT id FROM books WHERE id = ? AND owner_id = ?"
+    "SELECT id, title, author FROM books WHERE id = ? AND owner_id = ?"
   ).bind(book_id, data.user.sub).first();
 
   if (!book) return err("Book not found", 404);
@@ -51,6 +51,20 @@ export async function onRequestPost(context) {
   await env.DB.prepare(
     "INSERT INTO loans_out (id, book_id, lender_id, borrower_name, borrower_email, due_at) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(id, book_id, data.user.sub, borrower_name.trim(), borrower_email || null, due_at || null).run();
+
+  // If borrower_email matches a registered user, mirror as a loans_in record
+  if (borrower_email) {
+    const borrowerUser = await env.DB.prepare(
+      "SELECT id FROM users WHERE email = ?"
+    ).bind(borrower_email.toLowerCase()).first();
+
+    if (borrowerUser) {
+      const loanInId = randomId();
+      await env.DB.prepare(
+        "INSERT INTO loans_in (id, owner_id, title, author, lender_name, lender_email, due_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).bind(loanInId, borrowerUser.id, book.title, book.author, data.user.name, data.user.email, due_at || null).run();
+    }
+  }
 
   const loan = await env.DB.prepare(
     "SELECT lo.*, b.title, b.author FROM loans_out lo JOIN books b ON b.id = lo.book_id WHERE lo.id = ?"

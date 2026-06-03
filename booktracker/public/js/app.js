@@ -162,6 +162,7 @@ document.getElementById('add-book-btn').addEventListener('click', () => {
   document.getElementById('book-author').value = '';
   document.getElementById('book-notes').value = '';
   document.getElementById('book-cover-url').value = '';
+  document.getElementById('book-modal-loan').style.display = '';
   hideAlert('book-modal-alert');
   openModal('book-modal');
 });
@@ -185,9 +186,48 @@ function openEditBook(id) {
   document.getElementById(id).addEventListener('click', () => closeModal('book-modal'));
 });
 
-document.getElementById('book-modal-loan').addEventListener('click', () => {
-  const bookId = state.editingBookId;
-  if (!bookId) return;
+async function saveBookData() {
+  hideAlert('book-modal-alert');
+  const title = document.getElementById('book-title').value.trim();
+  const author = document.getElementById('book-author').value.trim();
+  const isbn = document.getElementById('book-isbn').value.trim();
+  const notes = document.getElementById('book-notes').value.trim();
+  const cover_url = document.getElementById('book-cover-url').value.trim();
+
+  if (!title || !author) {
+    showAlert('book-modal-alert', 'Title and author are required');
+    return null;
+  }
+
+  const btn = document.getElementById('book-modal-save');
+  btn.disabled = true;
+
+  const body = { title, author, isbn: isbn || null, notes: notes || null, cover_url: cover_url || null };
+  const isEdit = !!state.editingBookId;
+  const res = await api(
+    isEdit ? `/api/books/${state.editingBookId}` : '/api/books',
+    { method: isEdit ? 'PUT' : 'POST', body }
+  );
+  btn.disabled = false;
+
+  if (!res || !res.ok) {
+    showAlert('book-modal-alert', res?.data?.error || 'Failed to save book');
+    return null;
+  }
+
+  return res.data.book;
+}
+
+document.getElementById('book-modal-loan').addEventListener('click', async () => {
+  let bookId = state.editingBookId;
+
+  if (!bookId) {
+    const book = await saveBookData();
+    if (!book) return;
+    bookId = book.id;
+    await loadBooks();
+  }
+
   const available = state.books.filter(b => !b.on_loan);
   const select = document.getElementById('loan-out-book');
   select.innerHTML = available.map(b =>
@@ -231,32 +271,8 @@ document.getElementById('isbn-lookup-btn').addEventListener('click', async () =>
 });
 
 document.getElementById('book-modal-save').addEventListener('click', async () => {
-  hideAlert('book-modal-alert');
-  const title = document.getElementById('book-title').value.trim();
-  const author = document.getElementById('book-author').value.trim();
-  const isbn = document.getElementById('book-isbn').value.trim();
-  const notes = document.getElementById('book-notes').value.trim();
-  const cover_url = document.getElementById('book-cover-url').value.trim();
-
-  if (!title || !author) {
-    return showAlert('book-modal-alert', 'Title and author are required');
-  }
-
-  const btn = document.getElementById('book-modal-save');
-  btn.disabled = true;
-
-  const body = { title, author, isbn: isbn || null, notes: notes || null, cover_url: cover_url || null };
-  const isEdit = !!state.editingBookId;
-  const res = await api(
-    isEdit ? `/api/books/${state.editingBookId}` : '/api/books',
-    { method: isEdit ? 'PUT' : 'POST', body }
-  );
-  btn.disabled = false;
-
-  if (!res || !res.ok) {
-    return showAlert('book-modal-alert', res?.data?.error || 'Failed to save book');
-  }
-
+  const book = await saveBookData();
+  if (!book) return;
   closeModal('book-modal');
   await loadBooks();
 });
