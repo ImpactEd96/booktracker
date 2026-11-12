@@ -101,9 +101,11 @@
         <div class="form-group">
           <label class="form-label" for="book-isbn">ISBN (optional — for cover lookup)</label>
           <div style="display:flex;gap:8px">
-            <input class="form-input" type="text" id="book-isbn" placeholder="e.g. 9780141036144">
+            <input class="form-input" type="text" id="book-isbn" placeholder="e.g. 9780141036144" style="min-width:0">
+            <button class="btn btn-secondary btn-sm" id="book-isbn-scan-btn" style="white-space:nowrap">📷 Scan</button>
             <button class="btn btn-secondary btn-sm" id="isbn-lookup-btn" style="white-space:nowrap">Look up</button>
           </div>
+          <input type="file" id="book-isbn-photo" accept="image/*" capture="environment" hidden>
         </div>
         <div class="form-group">
           <label class="form-label" for="book-title">Title <span style="color:var(--danger)">*</span></label>
@@ -171,6 +173,15 @@
       <div class="modal-body">
         <div id="loan-in-alert" class="alert alert-error" style="display:none"></div>
         <div class="form-group">
+          <label class="form-label" for="loan-in-isbn">ISBN (optional — fills in title and author)</label>
+          <div style="display:flex;gap:8px">
+            <input class="form-input" type="text" id="loan-in-isbn" placeholder="e.g. 9780141036144" style="min-width:0">
+            <button class="btn btn-secondary btn-sm" id="loan-in-isbn-scan-btn" style="white-space:nowrap">📷 Scan</button>
+            <button class="btn btn-secondary btn-sm" id="loan-in-isbn-lookup-btn" style="white-space:nowrap">Look up</button>
+          </div>
+          <input type="file" id="loan-in-isbn-photo" accept="image/*" capture="environment" hidden>
+        </div>
+        <div class="form-group">
           <label class="form-label" for="loan-in-title">Book title <span style="color:var(--danger)">*</span></label>
           <input class="form-input" type="text" id="loan-in-title" placeholder="Title of the book">
         </div>
@@ -190,6 +201,7 @@
           <label class="form-label" for="loan-in-due">Due date (optional)</label>
           <input class="form-input" type="date" id="loan-in-due">
         </div>
+        <input type="hidden" id="loan-in-cover-url">
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="loan-in-cancel">Cancel</button>

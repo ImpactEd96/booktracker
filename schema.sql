@@ -37,6 +37,8 @@ CREATE TABLE IF NOT EXISTS loans_in (
   owner_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title        TEXT NOT NULL,
   author       TEXT NOT NULL,
+  isbn         TEXT,
+  cover_url    TEXT,
   lender_name  TEXT NOT NULL,
   lender_email TEXT,
   borrowed_at  TEXT DEFAULT (datetime('now')),

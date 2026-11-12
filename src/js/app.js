@@ -251,40 +251,153 @@ document.getElementById('book-modal-loan').addEventListener('click', async () =>
   openModal('loan-out-modal');
 });
 
-// ISBN lookup via Open Library
-document.getElementById('isbn-lookup-btn').addEventListener('click', async () => {
-  const isbn = document.getElementById('book-isbn').value.trim().replace(/[-\s]/g, '');
-  if (!isbn) return;
-  const btn = document.getElementById('isbn-lookup-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-  try {
-    const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
-    const data = await res.json();
-    const key = `ISBN:${isbn}`;
-    if (data[key]) {
-      const book = data[key];
-      document.getElementById('book-title').value = book.title || '';
-      document.getElementById('book-author').value =
-        (book.authors || []).map(a => a.name).join(', ') || '';
-      if (book.cover?.medium) {
-        document.getElementById('book-cover-url').value = book.cover.medium;
-      }
-    } else {
-      showAlert('book-modal-alert', 'No book found for that ISBN', 'error');
-    }
-  } catch {
-    showAlert('book-modal-alert', 'ISBN lookup failed — fill in manually', 'error');
-  }
-  btn.disabled = false;
-  btn.textContent = 'Look up';
-});
+// ── Barcode scanning from a photo ──────────────────────────
+// The barcode reader (zxing-wasm, ~1 MB) is loaded from jsDelivr the first
+// time someone taps Scan, so it doesn't slow down normal page loads.
+const BARCODE_READER_SRC = 'https://cdn.jsdelivr.net/npm/zxing-wasm@3.1.6/dist/iife/reader/index.js';
+const BARCODE_READER_SRI = 'sha384-WftrM7hFN3CZH1pg8fvonijN1mDx8lh1U3L267n+snjsk/o7oBdEbUx5R8P3uw9S';
+let barcodeReaderPromise = null;
 
-document.getElementById('book-isbn').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.getElementById('isbn-lookup-btn').click();
+function loadBarcodeReader() {
+  if (!barcodeReaderPromise) {
+    barcodeReaderPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = BARCODE_READER_SRC;
+      script.integrity = BARCODE_READER_SRI;
+      script.crossOrigin = 'anonymous';
+      script.onload = () => resolve(window.ZXingWASM);
+      script.onerror = () => {
+        barcodeReaderPromise = null; // allow a retry
+        script.remove();
+        reject(new Error('Could not load the barcode reader'));
+      };
+      document.head.appendChild(script);
+    });
   }
+  return barcodeReaderPromise;
+}
+
+// Draw the photo onto a canvas (shrinking big phone photos) and return its pixels
+async function photoToImageData(file, maxSide = 2400) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// Returns { isbn } if an ISBN barcode was found, or { isbn: null, sawOtherBarcode }
+async function readIsbnFromPhoto(file) {
+  const [reader, imageData] = await Promise.all([loadBarcodeReader(), photoToImageData(file)]);
+  let results;
+  try {
+    results = await reader.readBarcodes(imageData, {
+      formats: ['EAN13'],      // book barcodes are EAN-13; the small price add-on is ignored
+      tryHarder: true,
+      maxNumberOfSymbols: 4,   // some books also carry a separate price/retail barcode
+    });
+  } catch (e) {
+    reader.purgeZXingModule(); // a failed download is cached otherwise — retry next time
+    throw e;
+  }
+  // An ISBN-13 barcode always starts with 978 or 979
+  const isbn = results.map(r => r.text).find(text => /^97[89]\d{10}$/.test(text)) || null;
+  return { isbn, sawOtherBarcode: results.length > 0 };
+}
+
+// ISBN lookup via Open Library — shared by the "Add book" and "Log a borrowed book" modals
+function setupIsbnLookup({ inputId, btnId, scanBtnId, photoInputId, alertId, titleId, authorId, coverId }) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(btnId);
+  const scanBtn = document.getElementById(scanBtnId);
+  const photoInput = document.getElementById(photoInputId);
+
+  scanBtn.addEventListener('click', () => {
+    // Start downloading the reader while the camera is open
+    loadBarcodeReader()
+      .then(reader => reader.prepareZXingModule({ fireImmediately: true }))
+      .catch(() => {}); // any failure is reported when the photo is read
+    photoInput.value = '';
+    photoInput.click();
+  });
+
+  photoInput.addEventListener('change', async () => {
+    const file = photoInput.files[0];
+    if (!file) return;
+    hideAlert(alertId);
+    scanBtn.disabled = true;
+    scanBtn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const { isbn, sawOtherBarcode } = await readIsbnFromPhoto(file);
+      if (isbn) {
+        input.value = isbn;
+        btn.click(); // look it up straight away
+      } else if (sawOtherBarcode) {
+        showAlert(alertId, "That barcode isn't an ISBN — use the one starting 978 or 979");
+      } else {
+        showAlert(alertId, "Couldn't find a barcode in that photo — try closer, in good light, or type the ISBN");
+      }
+    } catch {
+      showAlert(alertId, "Couldn't scan the barcode — check your connection, or type the ISBN");
+    }
+    scanBtn.disabled = false;
+    scanBtn.textContent = '📷 Scan';
+  });
+
+  btn.addEventListener('click', async () => {
+    const isbn = input.value.trim().replace(/[-\s]/g, '');
+    if (!isbn) return;
+    hideAlert(alertId);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+      const data = await res.json();
+      const book = data[`ISBN:${isbn}`];
+      if (book) {
+        document.getElementById(titleId).value = book.title || '';
+        document.getElementById(authorId).value =
+          (book.authors || []).map(a => a.name).join(', ') || '';
+        if (coverId && book.cover?.medium) {
+          document.getElementById(coverId).value = book.cover.medium;
+        }
+      } else {
+        showAlert(alertId, 'No book found for that ISBN', 'error');
+      }
+    } catch {
+      showAlert(alertId, 'ISBN lookup failed — fill in manually', 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Look up';
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+}
+
+setupIsbnLookup({
+  inputId: 'book-isbn',
+  btnId: 'isbn-lookup-btn',
+  scanBtnId: 'book-isbn-scan-btn',
+  photoInputId: 'book-isbn-photo',
+  alertId: 'book-modal-alert',
+  titleId: 'book-title',
+  authorId: 'book-author',
+  coverId: 'book-cover-url',
 });
 
 document.getElementById('book-modal-save').addEventListener('click', async () => {
@@ -452,7 +565,9 @@ function renderLoansIn() {
     const overdue = !loan.returned_at && isOverdue(loan.due_at);
     return `
       <div class="loan-row" data-id="${loan.id}">
-        <div class="loan-cover-thumb-placeholder"></div>
+        ${loan.cover_url
+          ? `<img src="${escHtml(loan.cover_url)}" class="loan-cover-thumb" alt="">`
+          : `<div class="loan-cover-thumb-placeholder"></div>`}
         <div class="loan-details">
           <div class="loan-title">${escHtml(loan.title)}</div>
           <div class="loan-meta">
@@ -489,7 +604,20 @@ function renderLoansIn() {
   });
 }
 
+setupIsbnLookup({
+  inputId: 'loan-in-isbn',
+  btnId: 'loan-in-isbn-lookup-btn',
+  scanBtnId: 'loan-in-isbn-scan-btn',
+  photoInputId: 'loan-in-isbn-photo',
+  alertId: 'loan-in-alert',
+  titleId: 'loan-in-title',
+  authorId: 'loan-in-author',
+  coverId: 'loan-in-cover-url',
+});
+
 document.getElementById('add-loan-in-btn').addEventListener('click', () => {
+  document.getElementById('loan-in-isbn').value = '';
+  document.getElementById('loan-in-cover-url').value = '';
   document.getElementById('loan-in-title').value = '';
   document.getElementById('loan-in-author').value = '';
   document.getElementById('loan-in-lender').value = '';
@@ -505,6 +633,8 @@ document.getElementById('add-loan-in-btn').addEventListener('click', () => {
 
 document.getElementById('loan-in-save').addEventListener('click', async () => {
   hideAlert('loan-in-alert');
+  const isbn = document.getElementById('loan-in-isbn').value.trim();
+  const cover_url = document.getElementById('loan-in-cover-url').value.trim();
   const title = document.getElementById('loan-in-title').value.trim();
   const author = document.getElementById('loan-in-author').value.trim();
   const lender_name = document.getElementById('loan-in-lender').value.trim();
@@ -519,7 +649,11 @@ document.getElementById('loan-in-save').addEventListener('click', async () => {
   btn.disabled = true;
   const res = await api('/api/loans/in', {
     method: 'POST',
-    body: { title, author, lender_name, lender_email: lender_email || null, due_at: due_at || null }
+    body: {
+      title, author, lender_name,
+      isbn: isbn || null, cover_url: cover_url || null,
+      lender_email: lender_email || null, due_at: due_at || null,
+    }
   });
   btn.disabled = false;
 
