@@ -1,4 +1,4 @@
-# BookTracker
+# Shelf Life
 
 A personal book library and loan tracker, designed mainly for use on a phone. It keeps track of the books you own, who you've lent them to, and what you've borrowed from other people.
 
@@ -13,11 +13,11 @@ Live from the `main` branch on Cloudflare Pages: pushing to `main` updates the s
 - Search by title or author. Tap a book to edit or delete it, or to lend it out.
 
 **Loaned out**
-- Log who has your book and when it's due. Overdue loans are shown in red with ⚠ from the day after the due date.
+- Log who has your book and when it's due. Each loan shows how long ago you lent it ("loaned to Sam 3 weeks ago"). Overdue loans are shown in red with ⚠ from the day after the due date.
 - Tap a loan to change the borrower or due date, or to delete it. **Mark returned** when you get it back.
 
 **Borrowed**
-- Log books other people have lent you, with the same ISBN lookup and barcode scan.
+- Log books other people have lent you, with the same ISBN lookup and barcode scan. Each shows how long ago you borrowed it.
 - Tap one to edit or delete it.
 
 **Linked loans between accounts**
@@ -51,7 +51,7 @@ Settings the live site depends on, in the Cloudflare dashboard (not in this repo
 
 ```
 public/
-  index.html        Landing page ("SHELF LIFE")
+  index.html        Landing page
   login.html        Sign in
   signup.html       Create account
   app.html          The app itself: library, loans, and all the pop-up forms
@@ -111,7 +111,7 @@ What's in place:
 - **Length limits on every field:** titles and authors 300 characters, notes 5,000, names 100, emails 254, ISBNs 20. Due dates and cover links must be in the right format.
 
 Known gaps:
-- **Open signup:** anyone can create an account. An invite code would close this.
+- **Open signup (on purpose):** the site is public, so anyone can create an account. That makes password reset the most important missing piece (see Features to add).
 - **Linked loans:** any account can add a book to someone's Borrowed list by entering their email as the borrower.
 - **No password change or reset.** A reset needs the app to send email.
 - **Sign-out isn't remote:** it clears the cookie on that device, but a stolen session stays valid for up to 7 days.
@@ -119,12 +119,13 @@ Known gaps:
 
 ---
 
-## Ideas / to do
+## Features to add
 
-- **Install to the home screen (PWA):** its own icon, full-screen, faster to open.
-- **"Do I already own this?":** scan a book in a shop and get a warning if it's already in the library.
-- **Change password, and forgot password.**
-- **Overdue reminders:** by email or phone notification.
+- **Password reset (forgot password).** This is needed now the site is public: anyone who forgets their password has no way back in. It needs the app to send email. Add **change password** while signed in at the same time.
+- **Overdue reminders.** An email or phone notification when a loan runs past its due date. The "passive-aggressive reminder mode" idea from the landing page would live here.
+- **Filter, genre tags and ratings** for the library. The landing page's "Your Shelf" tile already advertises these, so build them or reword that tile.
+- **Install to the home screen (PWA).** Its own icon, full-screen, and faster to open.
+- **"Do I already own this?"** Scan a book in a shop and get a warning if it's already in the library.
 - **Export the library and loans to CSV.**
 
 ---

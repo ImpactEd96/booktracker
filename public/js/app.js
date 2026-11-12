@@ -1,5 +1,5 @@
 // src/js/app.js
-// BookTracker — main application logic
+// Shelf Life — main application logic
 
 // ── State ──────────────────────────────────────────────────
 let state = {
@@ -74,6 +74,23 @@ function localToday() {
 function isOverdue(due) {
   if (!due) return false;
   return due.slice(0, 10) < localToday();
+}
+
+// How long ago, in calendar days: "today", "yesterday", "5 days ago",
+// "3 weeks ago", "4 months ago", "over a year ago"
+function timeAgo(value) {
+  if (!value) return '';
+  const then = parseDate(value), now = new Date();
+  const days = Math.round(
+    (new Date(now.getFullYear(), now.getMonth(), now.getDate()) -
+     new Date(then.getFullYear(), then.getMonth(), then.getDate())) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 14) return `${days} days ago`;
+  if (days < 60) return `${Math.floor(days / 7)} weeks ago`;
+  if (days < 365) return `${Math.floor(days / 30)} months ago`;
+  const years = Math.floor(days / 365);
+  return years === 1 ? 'over a year ago' : `over ${years} years ago`;
 }
 
 function coverImg(url, title, cls = '') {
@@ -461,7 +478,7 @@ function renderLoansOut() {
         <div class="loan-details">
           <div class="loan-title">${escHtml(loan.title)}</div>
           <div class="loan-meta">
-            by ${escHtml(loan.author)} · loaned to <strong>${escHtml(loan.borrower_name)}</strong>
+            by ${escHtml(loan.author)} · loaned to <strong>${escHtml(loan.borrower_name)}</strong>${loan.returned_at ? '' : ' ' + timeAgo(loan.loaned_at)}
             ${loan.returned_at
               ? ` · returned ${fmtDate(loan.returned_at)}`
               : due ? ` · due <span style="color:${overdue ? 'var(--danger)' : 'inherit'}">${due}${overdue ? ' ⚠' : ''}</span>` : ''}
@@ -617,7 +634,7 @@ function renderLoansIn() {
         <div class="loan-details">
           <div class="loan-title">${escHtml(loan.title)}</div>
           <div class="loan-meta">
-            by ${escHtml(loan.author)} · from <strong>${escHtml(loan.lender_name)}</strong>
+            by ${escHtml(loan.author)} · from <strong>${escHtml(loan.lender_name)}</strong>${loan.returned_at ? '' : ' ' + timeAgo(loan.borrowed_at)}
             ${loan.returned_at
               ? ` · returned ${fmtDate(loan.returned_at)}`
               : due ? ` · due <span style="color:${overdue ? 'var(--danger)' : 'inherit'}">${due}${overdue ? ' ⚠' : ''}</span>` : ''}

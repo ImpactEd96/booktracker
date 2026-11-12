@@ -81,7 +81,13 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
   .hero-right{grid-row:1;display:flex;justify-content:center;}
   .hero-left{grid-row:2;}
   .hero-right svg{max-width:280px;width:80vw;}
-  nav ul{display:none;}
+  /* phones: logo, LOGIN and GET IT FREE on one line */
+  nav{padding:0.9rem 1rem;}
+  .nav-logo{font-size:1.45rem;}
+  nav ul{margin-left:auto;margin-right:0.9rem;}
+  nav ul a{font-size:1.1rem;}
+  nav ul li:not(.nav-login){display:none;}
+  .nav-btn{white-space:nowrap;padding:0.4rem 0.8rem;}
 }
 
 .hero-left{padding-top:1.5rem;}
@@ -166,7 +172,8 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
 @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
 
 /* ===================== FEATURES ===================== */
-.features{padding:5rem 1.6rem;max-width:1140px;margin:0 auto;position:relative;}
+.features{padding:5rem 1.6rem;max-width:1140px;margin:0 auto;position:relative;
+  overflow-x:clip;} /* keeps the ghost "01" from making the page wider than a phone */
 
 /* big ghost number behind section */
 .features::before{
@@ -286,11 +293,16 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
 
 /* ===================== STATS ===================== */
 .stats-row{
-  display:grid;grid-template-columns:repeat(4,1fr);
+  display:grid;grid-template-columns:repeat(3,1fr);
   border-top:3px solid rgba(242,236,218,0.15);
   max-width:1140px;margin:0 auto;
 }
-@media(max-width:600px){.stats-row{grid-template-columns:1fr 1fr;}}
+/* phones: two stats side by side, the third full width underneath */
+@media(max-width:600px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .stat-box:nth-child(2){border-right:none;}
+  .stat-box:last-child{grid-column:1 / -1;border-top:2px solid rgba(242,236,218,0.1);}
+}
 .stat-box{
   padding:2.5rem 1.5rem;text-align:center;
   border-right:2px solid rgba(242,236,218,0.1);
@@ -300,6 +312,8 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
   font-family:'Permanent Marker',cursive;font-size:4rem;line-height:1;
   color:var(--yellow);display:block;transform:rotate(-3deg);display:inline-block;
 }
+/* words instead of a number: two lines at half size = same height as the numbers */
+.stat-num.stat-words{font-size:2rem;line-height:1;}
 .stat-lbl{
   font-family:'VT323',monospace;font-size:0.88rem;text-transform:uppercase;
   letter-spacing:0.15em;opacity:0.45;margin-top:0.4rem;display:block;
@@ -332,6 +346,8 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
   letter-spacing:0.1em;opacity:0.6;position:relative;z-index:1;display:block;
   transform:rotate(0.8deg);
 }
+
+.clip-x{overflow-x:clip;}
 
 /* ===================== CHAOS STRIP ===================== */
 /* a band of overlapping scrawled words */
@@ -392,7 +408,11 @@ nav ul a:hover{color:var(--red);text-decoration:underline;text-decoration-style:
   width:130px;height:130px;
   transform:rotate(14deg);
 }
-@media(max-width:600px){.sticker{right:-10px;width:100px;height:100px;}}
+@media(max-width:600px){
+  .sticker{right:-10px;width:100px;height:100px;}
+  /* let the sticker hang off the screen edge without making the page wider than the phone */
+  .final-cta{overflow-x:clip;}
+}
 
 /* ===================== FOOTER ===================== */
 footer{
@@ -435,6 +455,12 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
 .hero-left>*:nth-child(3){animation-delay:0.32s;}
 .hero-left>*:nth-child(4){animation-delay:0.46s;}
 .hero-left>*:nth-child(5){animation-delay:0.55s;}
+
+/* people who've asked their device for less motion: stop the scrolling banners and entrance animations */
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  .marquee-track,.chaos-strip-inner,.hero-right svg,.hero-left>*{animation:none;}
+}
 </style>
 </head>
 <body>
@@ -446,7 +472,7 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
     <li><a href="#features">FEATURES</a></li>
     <li><a href="#tracker">TRACKER</a></li>
     <li><a href="#about">ABOUT</a></li>
-    <li><a href="/login">LOGIN</a></li>
+    <li class="nav-login"><a href="/login">LOGIN</a></li>
   </ul>
   <a href="/signup" class="nav-btn">GET IT FREE</a>
 </nav>
@@ -636,12 +662,12 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
     <span>LOG WHAT YOU LEND</span><span class="star">★</span>
     <span>REMEMBER WHO OWES YOU</span><span class="star">★</span>
     <span>NO MORE LOST BOOKS</span><span class="star">★</span>
-    <span>FREE. OFFLINE. YOURS.</span><span class="star">★</span>
+    <span>PHONE. LAPTOP. ALWAYS IN SYNC.</span><span class="star">★</span>
     <span>TRACK YOUR SHELF</span><span class="star">★</span>
     <span>LOG WHAT YOU LEND</span><span class="star">★</span>
     <span>REMEMBER WHO OWES YOU</span><span class="star">★</span>
     <span>NO MORE LOST BOOKS</span><span class="star">★</span>
-    <span>FREE. OFFLINE. YOURS.</span><span class="star">★</span>
+    <span>PHONE. LAPTOP. ALWAYS IN SYNC.</span><span class="star">★</span>
   </div>
 </div>
 
@@ -663,7 +689,7 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
     <div class="feat-item">
       <span class="feat-icon">📥</span>
       <span class="feat-title">Borrowed</span>
-      <p class="feat-desc">Track books you've borrowed from friends or family. See what you owe and set a reminder before they ask.</p>
+      <p class="feat-desc">Track books you've borrowed from friends or family. See what you owe, who to, and when it's due back, before they have to ask.</p>
     </div>
     <div class="feat-item">
       <span class="feat-icon">📤</span>
@@ -671,19 +697,19 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
       <p class="feat-desc">The important one. Exactly who has your books, when you gave it to them, and how long they've had it.</p>
     </div>
     <div class="feat-item">
-      <span class="feat-icon">🔔</span>
-      <span class="feat-title">Overdue Alerts</span>
-      <p class="feat-desc">Set return dates. Get notified when things run long. Passive-aggressive reminder mode included.</p>
+      <span class="feat-icon">🚩</span>
+      <span class="feat-title">Overdue Flags</span>
+      <p class="feat-desc">Set a due date. The day after it passes, the loan turns red with a ⚠ so you know exactly who to chase.</p>
     </div>
     <div class="feat-item">
-      <span class="feat-icon">📖</span>
-      <span class="feat-title">Reading Log</span>
-      <p class="feat-desc">Mark books as read, reading, or up next. Build a record of your reading life without an account.</p>
+      <span class="feat-icon">📷</span>
+      <span class="feat-title">Snap the Barcode</span>
+      <p class="feat-desc">Take a photo of the barcode on the back. The title and author fill themselves in, and the cover too if there is one.</p>
     </div>
     <div class="feat-item">
-      <span class="feat-icon">📴</span>
-      <span class="feat-title">Offline First</span>
-      <p class="feat-desc">Everything lives on your device. No subscription. No cloud. No one harvesting your reading habits.</p>
+      <span class="feat-icon">🤝</span>
+      <span class="feat-title">Lend to Family</span>
+      <p class="feat-desc">Lending to someone with an account? It lands in their Borrowed list automatically, and when either of you marks it returned, both lists update.</p>
     </div>
   </div>
 </section>
@@ -710,41 +736,42 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
 <section class="split-section" id="tracker">
   <div class="split-inner">
     <div class="split-col">
-      <p class="split-label">// tab one</p>
+      <p class="split-label">// the borrowed tab</p>
       <h3>BOOKS<br>YOU'VE <em>BORROWED</em></h3>
       <p>Keep an honest record of what you've taken from other people's shelves. Know what you owe and to whom before they have to ask.</p>
       <div class="book-rows" aria-label="Example borrowed books">
-        <div class="book-row"><span class="title">Blood Meridian — Sarah</span><span class="tag ok">On time</span></div>
+        <div class="book-row"><span class="title">Blood Meridian — Sarah</span><span class="tag warn">Due 3 Dec</span></div>
         <div class="book-row"><span class="title">The Dispossessed — Mum</span><span class="tag late">Overdue</span></div>
-        <div class="book-row"><span class="title">JPOD — Marcus</span><span class="tag warn">Due soon</span></div>
+        <div class="book-row"><span class="title">JPOD — Marcus</span><span class="tag ok">Returned</span></div>
       </div>
     </div>
     <div class="split-col">
-      <p class="split-label">// tab two — the important one</p>
+      <p class="split-label">// the loaned out tab — the important one</p>
       <h3>BOOKS<br>YOU'VE <em>LOANED</em></h3>
       <p>The list that actually matters. Exactly who has your stuff, since when, and whether it's time to say something about it.</p>
       <div class="book-rows" aria-label="Example loaned books">
-        <div class="book-row"><span class="title">Hyperion — Jake</span><span class="tag late">3 months</span></div>
+        <div class="book-row"><span class="title">Hyperion — Jake</span><span class="tag warn">Lent 3 months ago</span></div>
         <div class="book-row"><span class="title">Snow Crash — Ally</span><span class="tag late">Overdue</span></div>
-        <div class="book-row"><span class="title">Neuromancer — Tom</span><span class="tag ok">2 weeks</span></div>
+        <div class="book-row"><span class="title">Neuromancer — Tom</span><span class="tag ok">Returned</span></div>
       </div>
     </div>
   </div>
   <div style="max-width:1140px;margin:0 auto;">
     <div class="stats-row">
-      <div class="stat-box"><span class="stat-num">∞</span><span class="stat-lbl">Books tracked</span></div>
+      <div class="stat-box"><span class="stat-num stat-words">ALL OF<br>THEM</span><span class="stat-lbl">Books tracked</span></div>
       <div class="stat-box"><span class="stat-num">$0</span><span class="stat-lbl">Monthly cost</span></div>
       <div class="stat-box"><span class="stat-num">1</span><span class="stat-lbl">App you need</span></div>
-      <div class="stat-box"><span class="stat-num">100%</span><span class="stat-lbl">Your data</span></div>
     </div>
   </div>
 </section>
 
 <!-- ZINE QUOTE -->
+<div class="clip-x"><!-- trims the tilted band's corners at the screen edge -->
 <section class="zine-quote" id="about">
   <blockquote>"A GOOD BOOK LENT<br>IS A BOOK GONE."</blockquote>
   <cite>— every book lover who didn't use Shelf Life</cite>
 </section>
+</div>
 
 <!-- FINAL CTA -->
 <div class="final-cta">
@@ -758,8 +785,7 @@ footer small{font-family:'VT323',monospace;font-size:0.9rem;letter-spacing:0.12e
   </svg>
 
   <h2>STOP<br><span>LOSING</span><br><em>YOUR BOOKS.</em></h2>
-  <p>Free, offline, no account needed. Just a clean way to track your library and actually get your stuff back.</p>
-  <a href="/signup" class="btn-big" style="font-size:1.3rem;padding:0.85rem 3rem;">DOWNLOAD FREE</a>
+  <p>Free, and it works on your phone and your computer. Just a clean way to track your library and actually get your stuff back.</p>
 </div>
 
 <!-- FOOTER -->
