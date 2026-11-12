@@ -8,6 +8,8 @@ let state = {
   loansOut: [],
   loansIn: [],
   editingBookId: null,
+  editingLoanOutId: null,
+  editingLoanInId: null,
 };
 
 // ── API helpers ────────────────────────────────────────────
@@ -49,14 +51,29 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 // ── Helpers ────────────────────────────────────────────────
-function fmtDate(iso) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+// Dates come in two forms: due dates are calendar days ("2026-11-12"), and
+// timestamps from the database are in UTC ("2026-11-12 03:15:00")
+function parseDate(value) {
+  const day = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (day) return new Date(+day[1], day[2] - 1, +day[3]); // that day, in local time
+  const iso = value.replace(' ', 'T');
+  return new Date(/Z|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso + 'Z');
 }
 
+function fmtDate(value) {
+  if (!value) return null;
+  return parseDate(value).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Overdue once the due date has passed — a book due today isn't overdue yet
 function isOverdue(due) {
   if (!due) return false;
-  return new Date(due) < new Date();
+  return due.slice(0, 10) < localToday();
 }
 
 function coverImg(url, title, cls = '') {
@@ -238,17 +255,8 @@ document.getElementById('book-modal-loan').addEventListener('click', async () =>
     await loadBooks();
   }
 
-  const available = state.books.filter(b => !b.on_loan);
-  const select = document.getElementById('loan-out-book');
-  select.innerHTML = available.map(b =>
-    `<option value="${b.id}" ${b.id === bookId ? 'selected' : ''}>${escHtml(b.title)} — ${escHtml(b.author)}</option>`
-  ).join('');
-  document.getElementById('loan-out-borrower').value = '';
-  document.getElementById('loan-out-email').value = '';
-  document.getElementById('loan-out-due').value = '';
-  hideAlert('loan-out-alert');
   closeModal('book-modal');
-  openModal('loan-out-modal');
+  openLoanOutModal({ bookId });
 });
 
 // ── Barcode scanning from a photo ──────────────────────────
@@ -488,23 +496,60 @@ function renderLoansOut() {
       }
     });
   });
+
+  onLoanRowTap(container, id => {
+    const loan = state.loansOut.find(l => l.id === id);
+    if (loan) openLoanOutModal({ loan });
+  });
+}
+
+// Tapping a loan (anywhere except its button) opens it for editing
+function onLoanRowTap(container, open) {
+  container.querySelectorAll('.loan-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (!e.target.closest('button')) open(row.dataset.id);
+    });
+  });
+}
+
+// Log a new loan (optionally with a book preselected), or edit an existing one
+function openLoanOutModal({ loan = null, bookId = null } = {}) {
+  state.editingLoanOutId = loan?.id || null;
+  const select = document.getElementById('loan-out-book');
+  if (loan) {
+    select.innerHTML = `<option value="${escHtml(loan.book_id)}">${escHtml(loan.title)} — ${escHtml(loan.author)}</option>`;
+  } else {
+    select.innerHTML = state.books.filter(b => !b.on_loan).map(b =>
+      `<option value="${b.id}" ${b.id === bookId ? 'selected' : ''}>${escHtml(b.title)} — ${escHtml(b.author)}</option>`
+    ).join('');
+  }
+  select.disabled = !!loan; // the book can't be changed on an existing loan
+  document.getElementById('loan-out-modal-title').textContent = loan ? 'Edit loan' : 'Log a loan';
+  document.getElementById('loan-out-borrower').value = loan?.borrower_name || '';
+  document.getElementById('loan-out-email').value = loan?.borrower_email || '';
+  document.getElementById('loan-out-due').value = loan?.due_at || '';
+  document.getElementById('loan-out-delete').style.display = loan ? '' : 'none';
+  document.getElementById('loan-out-save').textContent = loan ? 'Save' : 'Log loan';
+  hideAlert('loan-out-alert');
+  openModal('loan-out-modal');
 }
 
 document.getElementById('add-loan-out-btn').addEventListener('click', () => {
-  const available = state.books.filter(b => !b.on_loan);
-  const select = document.getElementById('loan-out-book');
-  if (!available.length) {
+  if (!state.books.some(b => !b.on_loan)) {
     alert('All your books are either already on loan or your library is empty.');
     return;
   }
-  select.innerHTML = available.map(b =>
-    `<option value="${b.id}">${escHtml(b.title)} — ${escHtml(b.author)}</option>`
-  ).join('');
-  document.getElementById('loan-out-borrower').value = '';
-  document.getElementById('loan-out-email').value = '';
-  document.getElementById('loan-out-due').value = '';
-  hideAlert('loan-out-alert');
-  openModal('loan-out-modal');
+  openLoanOutModal();
+});
+
+document.getElementById('loan-out-delete').addEventListener('click', async () => {
+  if (!confirm('Delete this loan record?')) return;
+  const res = await api(`/api/loans/out/${state.editingLoanOutId}`, { method: 'DELETE' });
+  if (!res || !res.ok) {
+    return showAlert('loan-out-alert', res?.data?.error || 'Could not delete loan');
+  }
+  closeModal('loan-out-modal');
+  await Promise.all([loadBooks(), loadLoansOut()]);
 });
 
 ['loan-out-modal-close', 'loan-out-cancel'].forEach(id => {
@@ -524,14 +569,15 @@ document.getElementById('loan-out-save').addEventListener('click', async () => {
 
   const btn = document.getElementById('loan-out-save');
   btn.disabled = true;
-  const res = await api('/api/loans/out', {
-    method: 'POST',
-    body: { book_id, borrower_name, borrower_email: borrower_email || null, due_at: due_at || null }
-  });
+  const editId = state.editingLoanOutId;
+  const body = { borrower_name, borrower_email: borrower_email || null, due_at: due_at || null };
+  const res = editId
+    ? await api(`/api/loans/out/${editId}`, { method: 'PUT', body })
+    : await api('/api/loans/out', { method: 'POST', body: { book_id, ...body } });
   btn.disabled = false;
 
   if (!res || !res.ok) {
-    return showAlert('loan-out-alert', res?.data?.error || 'Failed to log loan');
+    return showAlert('loan-out-alert', res?.data?.error || 'Failed to save loan');
   }
   closeModal('loan-out-modal');
   await Promise.all([loadBooks(), loadLoansOut()]);
@@ -602,6 +648,28 @@ function renderLoansIn() {
       if (res?.ok) await loadLoansIn();
     });
   });
+
+  onLoanRowTap(container, id => {
+    const loan = state.loansIn.find(l => l.id === id);
+    if (loan) openLoanInModal(loan);
+  });
+}
+
+// Log a newly borrowed book, or edit an existing one
+function openLoanInModal(loan = null) {
+  state.editingLoanInId = loan?.id || null;
+  document.getElementById('loan-in-modal-title').textContent = loan ? 'Edit borrowed book' : 'Log a borrowed book';
+  document.getElementById('loan-in-isbn').value = loan?.isbn || '';
+  document.getElementById('loan-in-cover-url').value = loan?.cover_url || '';
+  document.getElementById('loan-in-title').value = loan?.title || '';
+  document.getElementById('loan-in-author').value = loan?.author || '';
+  document.getElementById('loan-in-lender').value = loan?.lender_name || '';
+  document.getElementById('loan-in-email').value = loan?.lender_email || '';
+  document.getElementById('loan-in-due').value = loan?.due_at || '';
+  document.getElementById('loan-in-delete').style.display = loan ? '' : 'none';
+  document.getElementById('loan-in-save').textContent = loan ? 'Save' : 'Log book';
+  hideAlert('loan-in-alert');
+  openModal('loan-in-modal');
 }
 
 setupIsbnLookup({
@@ -615,16 +683,16 @@ setupIsbnLookup({
   coverId: 'loan-in-cover-url',
 });
 
-document.getElementById('add-loan-in-btn').addEventListener('click', () => {
-  document.getElementById('loan-in-isbn').value = '';
-  document.getElementById('loan-in-cover-url').value = '';
-  document.getElementById('loan-in-title').value = '';
-  document.getElementById('loan-in-author').value = '';
-  document.getElementById('loan-in-lender').value = '';
-  document.getElementById('loan-in-email').value = '';
-  document.getElementById('loan-in-due').value = '';
-  hideAlert('loan-in-alert');
-  openModal('loan-in-modal');
+document.getElementById('add-loan-in-btn').addEventListener('click', () => openLoanInModal());
+
+document.getElementById('loan-in-delete').addEventListener('click', async () => {
+  if (!confirm('Delete this borrowed book record?')) return;
+  const res = await api(`/api/loans/in/${state.editingLoanInId}`, { method: 'DELETE' });
+  if (!res || !res.ok) {
+    return showAlert('loan-in-alert', res?.data?.error || 'Could not delete record');
+  }
+  closeModal('loan-in-modal');
+  await loadLoansIn();
 });
 
 ['loan-in-modal-close', 'loan-in-cancel'].forEach(id => {
@@ -647,8 +715,9 @@ document.getElementById('loan-in-save').addEventListener('click', async () => {
 
   const btn = document.getElementById('loan-in-save');
   btn.disabled = true;
-  const res = await api('/api/loans/in', {
-    method: 'POST',
+  const editId = state.editingLoanInId;
+  const res = await api(editId ? `/api/loans/in/${editId}` : '/api/loans/in', {
+    method: editId ? 'PUT' : 'POST',
     body: {
       title, author, lender_name,
       isbn: isbn || null, cover_url: cover_url || null,
@@ -658,7 +727,7 @@ document.getElementById('loan-in-save').addEventListener('click', async () => {
   btn.disabled = false;
 
   if (!res || !res.ok) {
-    return showAlert('loan-in-alert', res?.data?.error || 'Failed to log loan');
+    return showAlert('loan-in-alert', res?.data?.error || 'Failed to save');
   }
   closeModal('loan-in-modal');
   await loadLoansIn();

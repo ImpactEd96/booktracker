@@ -1,6 +1,7 @@
 // functions/api/loans/out.js
 
-import { json, err, randomId } from "../../_lib/helpers.js";
+import { json, err, randomId, checkFields } from "../../_lib/helpers.js";
+import { ensureLoansInColumns } from "../../_lib/schema.js";
 
 export async function onRequestGet(context) {
   const { env, data } = context;
@@ -21,6 +22,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { request, env, data } = context;
+  await ensureLoansInColumns(env.DB);
 
   let body;
   try {
@@ -34,9 +36,11 @@ export async function onRequestPost(context) {
   if (!book_id || !borrower_name) {
     return err("Book and borrower name are required");
   }
+  const problem = checkFields(body, ["book_id", "borrower_name", "borrower_email", "due_at"]);
+  if (problem) return err(problem);
 
   const book = await env.DB.prepare(
-    "SELECT id, title, author FROM books WHERE id = ? AND owner_id = ?"
+    "SELECT id, title, author, isbn, cover_url FROM books WHERE id = ? AND owner_id = ?"
   ).bind(book_id, data.user.sub).first();
 
   if (!book) return err("Book not found", 404);
@@ -52,7 +56,8 @@ export async function onRequestPost(context) {
     "INSERT INTO loans_out (id, book_id, lender_id, borrower_name, borrower_email, due_at) VALUES (?, ?, ?, ?, ?, ?)"
   ).bind(id, book_id, data.user.sub, borrower_name.trim(), borrower_email || null, due_at || null).run();
 
-  // If borrower_email matches a registered user, mirror as a loans_in record
+  // If borrower_email matches a registered user, mirror as a loans_in record,
+  // linked to this loan so returns, due-date changes and deletes stay in sync
   if (borrower_email) {
     const borrowerUser = await env.DB.prepare(
       "SELECT id FROM users WHERE email = ?"
@@ -61,8 +66,8 @@ export async function onRequestPost(context) {
     if (borrowerUser) {
       const loanInId = randomId();
       await env.DB.prepare(
-        "INSERT INTO loans_in (id, owner_id, title, author, lender_name, lender_email, due_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-      ).bind(loanInId, borrowerUser.id, book.title, book.author, data.user.name, data.user.email, due_at || null).run();
+        "INSERT INTO loans_in (id, owner_id, title, author, isbn, cover_url, lender_name, lender_email, due_at, loan_out_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+      ).bind(loanInId, borrowerUser.id, book.title, book.author, book.isbn, book.cover_url, data.user.name, data.user.email, due_at || null, id).run();
     }
   }
 

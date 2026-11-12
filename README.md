@@ -95,7 +95,9 @@ booktracker/
 │   ├── _middleware.js      # JWT auth check for all /api/* routes
 │   ├── _lib/
 │   │   ├── crypto.js       # PBKDF2 + JWT (Web Crypto API, zero deps)
-│   │   └── helpers.js      # Response helpers, cookie utilities
+│   │   ├── helpers.js      # Response helpers, cookie utilities, field length limits
+│   │   ├── ratelimit.js    # Sign-in / sign-up attempt limits
+│   │   └── schema.js       # Adds newer columns/tables to older databases automatically
 │   ├── auth/
 │   │   ├── signup.js       # POST /auth/signup
 │   │   ├── login.js        # POST /auth/login
@@ -107,7 +109,9 @@ booktracker/
 │       ├── loans/
 │       │   ├── out.js      # GET / POST /api/loans/out
 │       │   ├── in.js       # GET / POST /api/loans/in
+│       │   ├── out/[id].js          # PUT / DELETE /api/loans/out/:id
 │       │   ├── out/[id]/return.js   # POST /api/loans/out/:id/return
+│       │   ├── in/[id].js           # PUT / DELETE /api/loans/in/:id
 │       │   └── in/[id]/return.js    # POST /api/loans/in/:id/return
 │       └── users/
 │           └── me.js       # GET /api/users/me
@@ -151,10 +155,14 @@ booktracker/
 |--------|------|-------------|
 | GET | `/api/loans/out` | Books loaned to others |
 | POST | `/api/loans/out` | Log a new loan out |
-| POST | `/api/loans/out/:id/return` | Mark as returned |
+| PUT | `/api/loans/out/:id` | Edit borrower / due date (due date also updates the borrower's linked record) |
+| DELETE | `/api/loans/out/:id` | Delete loan (and the borrower's linked record) |
+| POST | `/api/loans/out/:id/return` | Mark as returned (both sides of a linked loan) |
 | GET | `/api/loans/in` | Books borrowed from others |
 | POST | `/api/loans/in` | Log a borrowed book |
-| POST | `/api/loans/in/:id/return` | Mark as returned |
+| PUT | `/api/loans/in/:id` | Edit a borrowed book |
+| DELETE | `/api/loans/in/:id` | Delete a borrowed book record |
+| POST | `/api/loans/in/:id/return` | Mark as returned (both sides of a linked loan) |
 
 ---
 

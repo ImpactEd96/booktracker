@@ -236,6 +236,7 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--border);
 }
 .loan-row:last-child { border-bottom: none; }
+.loan-row { cursor: pointer; } /* tap to edit */
 .loan-cover-thumb {
   width: 36px;
   height: 54px;

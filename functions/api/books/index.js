@@ -1,6 +1,6 @@
 // functions/api/books/index.js
 
-import { json, err, randomId } from "../../_lib/helpers.js";
+import { json, err, checkFields, randomId } from "../../_lib/helpers.js";
 
 export async function onRequestGet(context) {
   const { env, data } = context;
@@ -36,6 +36,8 @@ export async function onRequestPost(context) {
   if (!title || !author) {
     return err("Title and author are required");
   }
+  const problem = checkFields(body, ["title", "author", "isbn", "cover_url", "notes"]);
+  if (problem) return err(problem);
 
   const id = randomId();
   await env.DB.prepare(

@@ -43,10 +43,20 @@ CREATE TABLE IF NOT EXISTS loans_in (
   lender_email TEXT,
   borrowed_at  TEXT DEFAULT (datetime('now')),
   due_at       TEXT,
-  returned_at  TEXT
+  returned_at  TEXT,
+  loan_out_id  TEXT  -- set when created from someone else's loan (loans_out.id)
+);
+
+-- Recent failed sign-ins and sign-up attempts, for rate limiting
+CREATE TABLE IF NOT EXISTS auth_attempts (
+  kind         TEXT NOT NULL,   -- 'login' or 'signup'
+  email        TEXT,
+  ip           TEXT,
+  attempted_at INTEGER NOT NULL -- unix seconds
 );
 
 CREATE INDEX IF NOT EXISTS idx_books_owner ON books(owner_id);
 CREATE INDEX IF NOT EXISTS idx_loans_out_lender ON loans_out(lender_id);
 CREATE INDEX IF NOT EXISTS idx_loans_out_book ON loans_out(book_id);
 CREATE INDEX IF NOT EXISTS idx_loans_in_owner ON loans_in(owner_id);
+CREATE INDEX IF NOT EXISTS idx_auth_attempts_time ON auth_attempts(attempted_at);

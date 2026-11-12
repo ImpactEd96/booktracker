@@ -101,7 +101,7 @@
         <div class="form-group">
           <label class="form-label" for="book-isbn">ISBN (optional — for cover lookup)</label>
           <div style="display:flex;gap:8px">
-            <input class="form-input" type="text" id="book-isbn" placeholder="e.g. 9780141036144" style="min-width:0">
+            <input class="form-input" type="text" id="book-isbn" maxlength="20" placeholder="e.g. 9780141036144" style="min-width:0">
             <button class="btn btn-secondary btn-sm" id="book-isbn-scan-btn" style="white-space:nowrap">📷 Scan</button>
             <button class="btn btn-secondary btn-sm" id="isbn-lookup-btn" style="white-space:nowrap">Look up</button>
           </div>
@@ -109,15 +109,15 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="book-title">Title <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="book-title" placeholder="The name of the book">
+          <input class="form-input" type="text" id="book-title" maxlength="300" placeholder="The name of the book">
         </div>
         <div class="form-group">
           <label class="form-label" for="book-author">Author <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="book-author" placeholder="Author name">
+          <input class="form-input" type="text" id="book-author" maxlength="300" placeholder="Author name">
         </div>
         <div class="form-group">
           <label class="form-label" for="book-notes">Notes (optional)</label>
-          <textarea class="form-textarea" id="book-notes" placeholder="Any personal notes about this book…"></textarea>
+          <textarea class="form-textarea" id="book-notes" maxlength="5000" placeholder="Any personal notes about this book…"></textarea>
         </div>
         <input type="hidden" id="book-cover-url">
       </div>
@@ -134,7 +134,7 @@
   <div class="modal-backdrop" id="loan-out-modal">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">Log a loan</h2>
+        <h2 class="modal-title" id="loan-out-modal-title">Log a loan</h2>
         <button class="btn btn-ghost btn-icon" id="loan-out-modal-close" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
@@ -145,11 +145,11 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-out-borrower">Borrower's name <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="loan-out-borrower" placeholder="Who are you lending to?">
+          <input class="form-input" type="text" id="loan-out-borrower" maxlength="100" placeholder="Who are you lending to?">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-out-email">Borrower's email (optional)</label>
-          <input class="form-input" type="email" id="loan-out-email" placeholder="their@email.com">
+          <input class="form-input" type="email" id="loan-out-email" maxlength="254" placeholder="their@email.com">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-out-due">Due date (optional)</label>
@@ -157,6 +157,7 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-danger" id="loan-out-delete" style="display:none;margin-right:auto">Delete</button>
         <button class="btn btn-secondary" id="loan-out-cancel">Cancel</button>
         <button class="btn btn-primary" id="loan-out-save">Log loan</button>
       </div>
@@ -167,7 +168,7 @@
   <div class="modal-backdrop" id="loan-in-modal">
     <div class="modal">
       <div class="modal-header">
-        <h2 class="modal-title">Log a borrowed book</h2>
+        <h2 class="modal-title" id="loan-in-modal-title">Log a borrowed book</h2>
         <button class="btn btn-ghost btn-icon" id="loan-in-modal-close" aria-label="Close">✕</button>
       </div>
       <div class="modal-body">
@@ -175,7 +176,7 @@
         <div class="form-group">
           <label class="form-label" for="loan-in-isbn">ISBN (optional — fills in title and author)</label>
           <div style="display:flex;gap:8px">
-            <input class="form-input" type="text" id="loan-in-isbn" placeholder="e.g. 9780141036144" style="min-width:0">
+            <input class="form-input" type="text" id="loan-in-isbn" maxlength="20" placeholder="e.g. 9780141036144" style="min-width:0">
             <button class="btn btn-secondary btn-sm" id="loan-in-isbn-scan-btn" style="white-space:nowrap">📷 Scan</button>
             <button class="btn btn-secondary btn-sm" id="loan-in-isbn-lookup-btn" style="white-space:nowrap">Look up</button>
           </div>
@@ -183,19 +184,19 @@
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-in-title">Book title <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="loan-in-title" placeholder="Title of the book">
+          <input class="form-input" type="text" id="loan-in-title" maxlength="300" placeholder="Title of the book">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-in-author">Author <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="loan-in-author" placeholder="Author name">
+          <input class="form-input" type="text" id="loan-in-author" maxlength="300" placeholder="Author name">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-in-lender">Lender's name <span style="color:var(--danger)">*</span></label>
-          <input class="form-input" type="text" id="loan-in-lender" placeholder="Who lent you this?">
+          <input class="form-input" type="text" id="loan-in-lender" maxlength="100" placeholder="Who lent you this?">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-in-email">Lender's email (optional)</label>
-          <input class="form-input" type="email" id="loan-in-email" placeholder="their@email.com">
+          <input class="form-input" type="email" id="loan-in-email" maxlength="254" placeholder="their@email.com">
         </div>
         <div class="form-group">
           <label class="form-label" for="loan-in-due">Due date (optional)</label>
@@ -204,6 +205,7 @@
         <input type="hidden" id="loan-in-cover-url">
       </div>
       <div class="modal-footer">
+        <button class="btn btn-danger" id="loan-in-delete" style="display:none;margin-right:auto">Delete</button>
         <button class="btn btn-secondary" id="loan-in-cancel">Cancel</button>
         <button class="btn btn-primary" id="loan-in-save">Log book</button>
       </div>

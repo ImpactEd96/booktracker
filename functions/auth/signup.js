@@ -1,7 +1,8 @@
 // functions/auth/signup.js
 
 import { hashPassword, signJWT } from "../_lib/crypto.js";
-import { json, err, setCookieHeader, randomId, validateEmail } from "../_lib/helpers.js";
+import { json, err, setCookieHeader, randomId, validateEmail, checkFields, clientIp } from "../_lib/helpers.js";
+import { signupBlocked, recordSignupAttempt } from "../_lib/ratelimit.js";
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -18,6 +19,8 @@ export async function onRequestPost(context) {
   if (!name || !email || !password) {
     return err("Name, email and password are required");
   }
+  const problem = checkFields(body, ["name", "email", "password"]);
+  if (problem) return err(problem);
   if (!validateEmail(email)) {
     return err("Invalid email address");
   }
@@ -27,6 +30,14 @@ export async function onRequestPost(context) {
   if (name.trim().length < 2) {
     return err("Name must be at least 2 characters");
   }
+
+  // Limit sign-ups per network, so nobody can use this form to check
+  // lots of email addresses for existing accounts
+  const ip = clientIp(request);
+  if (await signupBlocked(env.DB, ip)) {
+    return err("Too many sign-up attempts. Please try again in an hour.", 429);
+  }
+  await recordSignupAttempt(env.DB, email.toLowerCase(), ip);
 
   const existing = await env.DB.prepare(
     "SELECT id FROM users WHERE email = ?"

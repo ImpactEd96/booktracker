@@ -1,6 +1,6 @@
 // functions/api/loans/in.js
 
-import { json, err, randomId } from "../../_lib/helpers.js";
+import { json, err, randomId, checkFields } from "../../_lib/helpers.js";
 import { ensureLoansInColumns } from "../../_lib/schema.js";
 
 export async function onRequestGet(context) {
@@ -34,6 +34,8 @@ export async function onRequestPost(context) {
   if (!title || !author || !lender_name) {
     return err("Title, author and lender name are required");
   }
+  const problem = checkFields(body, ["title", "author", "isbn", "cover_url", "lender_name", "lender_email", "due_at"]);
+  if (problem) return err(problem);
 
   const id = randomId();
   await env.DB.prepare(

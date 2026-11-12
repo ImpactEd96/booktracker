@@ -1,6 +1,6 @@
 // functions/api/books/[id].js
 
-import { json, err } from "../../_lib/helpers.js";
+import { json, err, checkFields } from "../../_lib/helpers.js";
 
 async function getBook(env, bookId, userId) {
   return env.DB.prepare(
@@ -33,6 +33,8 @@ export async function onRequestPut(context) {
   if (!title || !author) {
     return err("Title and author are required");
   }
+  const problem = checkFields(body, ["title", "author", "isbn", "cover_url", "notes"]);
+  if (problem) return err(problem);
 
   await env.DB.prepare(
     "UPDATE books SET title = ?, author = ?, isbn = ?, cover_url = ?, notes = ? WHERE id = ?"
