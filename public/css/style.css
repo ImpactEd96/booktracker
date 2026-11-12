@@ -438,4 +438,7 @@ a:hover { text-decoration: underline; }
   .page-header { flex-direction: column; align-items: flex-start; }
   .nav-links { display: none; }
   .auth-card { padding: 28px 20px; }
+  /* Modal buttons: two per row so they all fit on a phone screen */
+  .modal-footer { flex-wrap: wrap; }
+  .modal-footer .btn { flex: 1 1 calc(50% - 4px); justify-content: center; margin-right: 0 !important; }
 }
